@@ -1,0 +1,73 @@
+script-dir: /etc/nodepool/scripts
+elements-dir: /etc/nodepool/elements
+images-dir: /opt/nodepool_dib
+
+cron:
+  cleanup: '*/1 * * * *'
+  check: '*/15 * * * *'
+  image-update: '14 14 * * *'
+
+zmq-publishers:
+  - tcp://localhost:8888
+
+gearman-servers:
+  - host: 127.0.0.1
+
+labels:
+  - name: ubuntu-trusty
+    image: ubuntu-trusty
+    ready-script: configure_mirror.sh
+    min-ready: 20
+    providers:
+      - name: zte-RegionOne
+  - name: ubuntu-trusty-2-node
+    image: ubuntu-trusty
+    ready-script: multinode_setup.sh
+    subnodes: 1
+    min-ready: 1
+    providers:
+      - name: zte-RegionOne
+
+providers:
+  - name: zte-RegionOne
+    region-name: 'RegionOne'
+    username: 'ciuser'
+    password: 'ciuser'
+    auth-url: 'http://172.10.0.11:5000/v2.0'
+    project-name: 'ciuser'
+    api-timeout: 60
+    boot-timeout: 120
+    max-servers: 40
+    rate: 0.001
+    image-type: qcow2
+    images:
+      - name: ubuntu-trusty
+        min-ram: 8192
+        diskimage: ubuntu-trusty
+        username: jenkins
+        private-key: /home/nodepool/.ssh/id_rsa
+        name-filter: 'Performance'
+        config-drive: true
+
+targets:
+  - name: jenkins01
+  
+diskimages:
+  - name: ubuntu-trusty
+    elements:
+      - ubuntu-minimal
+      - vm
+      - simple-init
+      - openstack-repos
+      - nodepool-base
+      - node-devstack
+      - cache-bindep
+      - growroot
+      - infra-package-needs
+    release: trusty
+    env-vars:
+      DIB_DISTRIBUTION_MIRROR: http://mirrors.zte.com.cn/ubuntu/
+      TMPDIR: /opt/dib_tmp
+      DIB_IMAGE_CACHE: /opt/dib_cache
+      DIB_APT_LOCAL_CACHE: '0'
+      DIB_DISABLE_APT_CLEANUP: '1'
